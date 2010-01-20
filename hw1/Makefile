@@ -4,7 +4,7 @@
 CFLAGS = -g3 -std=c99 -pedantic -Wall
 
 # Rule to create Count from Count.o
-count.out:  count.c
+Count:  count.c
 	${CC} ${CFLAGS} $^ -o $@
 
 # Rule to create count.c (implicit, and thus omitted)
