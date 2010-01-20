@@ -7,6 +7,11 @@ Date  Time   Spent Work completed
                    debugged compile time errors, but not logical bugs
 1/19  17:15  3:00  Rewrote majority of code because I realized I misunderstood
                    part of the assignment; program mostly works now
+1/20  15:00  1:30  Fixed several bugs (including how it handles quotes), but
+                   just realized there is a major problem with the way my
+                   program runs.  Realized I will have to make a big change
+                   to handle the "look ahead"
+
 
              ----
              7:55  TOTAL time spent
