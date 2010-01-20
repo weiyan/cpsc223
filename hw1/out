@@ -1,13 +1,21 @@
 #include <stdio.h>
+ 1
 #include <ctype.h>
+ 2
 
 main() {
+ 3
   int lines = 0;
+ 4
   int c;
+ 5
 
   int in_comment = 0;
+ 6
   int in_string = 0;
+ 7
   int has_code = 0;
+ 8
 
 /*read char
     print char
@@ -17,29 +25,38 @@ main() {
 */
 
   while ((c = getchar()) != EOF ) {
-    int next_char = 0;
-
-// problematic for last case
+ 9
 
     putchar(c);
+ 10
 
 /*  if we're inside of a comment, then we only need to watch out if
     the char we read signifies the end of the comment  */
 
     if (in_comment) {
-      if (c == '*' && (next_char = getchar()) == '/' ){
+ 11
+      if (c == '*' && getchar() == '/ ){
+ 12
         in_comment = 0;
-        putchar('/');
+ 13
+        putchar('/);
+ 14
       }
+ 15
     }
+ 16
 
 /*  watch for the beginning of a comment, but only if we are not currently
     in a quote (string) */
 
-    else if (!in_string && c == '/' && (next_char = getchar()) == '*') {
+    else if (!in_string && c == '/ && getchar() == '*') {
+ 17
       in_comment = 1;
+ 18
       putchar('*');
-    }    // at this point, we know we are not in a comment
+ 19
+    }    / at this point, we know we are not in a comment
+ 20
 
 /*  if we're inside of a string, then we need to watch for escape sequences
     specifically, print out the next char, since it must belong to the
@@ -47,42 +64,56 @@ main() {
     end of the quote */
 
     else if (in_string) {
-      if (c == '\\') {
+ 21
+      if (c == '\') {
+ 22
         putchar(getchar());
+ 23
       }
+ 24
     }
+ 25
 
-    else if (c == '\"') {
+    else if (c == '\') {
+ 26
       in_string = 1;
+ 27
     }
+ 28
 
 /*  test for line splices*/
 
-    else if (c == '\\' && (next_char = getchar()) == '\n' ) {
-      putchar('\n');
+    else if (c == '\' && getchar() == '\' ) {
+ 29
+      putchar('\');
+ 30
     }
+ 31
 
 /*  at this point, we know we are not in a comment or string, and there is
     no line splice, so any nonspace character we find is code */
 
     else if (!isspace(c)) {
+ 32
       has_code = 1;
+ 33
     }
+ 34
 
 /*  now, if c is a newline, and there is code, then count as a line */
 
-    else if (c == '\n' && has_code) {
+    else if (c == '\' && has_code) {
+ 35
       lines++;
-      printf(" /*%d*/\n", lines);
+ 36
+      printf(" %d\n", lines);
       has_code = 0;
     }
 
+// what if getchar() in the middle of while loop returns EOF?
 // what if getchar() in the middle of while loop returns something unexpected?
 
 
   } // ends while
-
-  return 1;
-
 }
 
