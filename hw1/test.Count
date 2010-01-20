@@ -1,0 +1,303 @@
+#!/usr/bin/perl -w
+
+use strict;
+my $debug = 0;
+
+my $CLASS  = "223";
+my $HWK    = "1";
+my $NAME   = "Count";           # Name of program
+my $TEST   = "tIJ.c";           # Name of test file (IJ is replaced by number)
+my $ANSWER = "tIJ.cs";          # Name of answer file (IJ is replaced by number)
+my $DATE   = "01/14/10";        # Date script written
+my $LANG   = "C";               # Language (C, Perl, ...)
+
+my $PROGRAM = "./$NAME";        # Name of executable
+
+my %WHICH;                      # Allow individual tests on command line
+@WHICH{@ARGV}++
+   if (@ARGV);
+
+my @UNLINK;                                     # Files to delete on signal
+$SIG{HUP} = $SIG{INT} = $SIG{QUIT}
+   = $SIG{TERM} = \&cleanup;
+sub cleanup {unlink (@UNLINK); exit;}
+
+$0 =~ s{^.*/}{};                                # Extract test type
+my $TYPE = ($0 =~ m{^test\.}) ? "Public" : "Final";
+print "\n$TYPE test script for $NAME ($DATE)\n\n";
+
+&makeProgram
+   unless ($LANG eq "Perl");
+
+&limitCpuTime (1);                              # Limit CPU-time per process
+&limitWallClock (2);                            # Limit wall-clock per process
+&limitFileSize (10000);                         # Limit size of files created
+&limitHeapSize (100000);                        # Limit size of heap
+
+$|++;
+print "\nEach test is either passed or failed; there is no partial credit.\n\n"
+    . "To execute the test labelled IJ, type the command:\n"
+#   . "     /c/cs$CLASS/Hwk${HWK}/Tests/$TEST\n"
+    . "     $PROGRAM < /c/cs$CLASS/Hwk${HWK}/Tests/$TEST\n"
+    . "The answer expected is in /c/cs$CLASS/Hwk${HWK}/Tests/$ANSWER.\n\n";
+
+my $total = 0;
+
+&header ('Generic');
+$total += &runTest ('01', 'Code, string, & char constant; no comments');
+
+&header ('ANSI Comments');
+$total += &runTest ('02', 'Simple comments');
+$total += &runTest ('03', 'Unterminated comment (graceful)', "Graceful");
+$total += &runTest ('04', 'Comments nest, not!');
+$total += &runTest ('05', 'String or char constant within comment, not!');
+
+&header ('Strings and char constants');
+$total += &runTest ('06', 'Single quote in string');
+$total += &runTest ('07', 'Escaped double quote is string');
+$total += &runTest ('08', 'Adjacent strings');
+$total += &runTest ('09', 'Comment followed/preceded by string');
+
+&header ('Line splices');
+$total += &runTest ('10', 'Simple');
+$total += &runTest ('11', 'Within start-comment');
+$total += &runTest ('12', 'Sequence of splices I');
+
+&header ('Stress');
+$total += &runTest ('13', 'Preprocessor directives (graceful)', "Graceful");
+
+print "\nEnd of Public Script\n\n";
+
+print "\n $total points  Total for $NAME\n";
+
+&header ("Possible Deductions (assessed later as appropriate) ");
+&deduction ( -5, "Does not make");
+&deduction ( -1, "Makefile missing");
+&deduction ( -1, "Makefile incorrect");
+&deduction ( -1, "Log file incorrectly named");
+&deduction ( -1, "Log file lacks estimated time");
+&deduction ( -1, "Log file lacks total time");
+&deduction ( -1, "Log file lacks statement of major difficulties");
+&deduction ( -1, "Compilation errors using -Wall -std=c99 -pedantic");
+&deduction ( -8, "No face-to-face grading session");
+
+if ($TYPE eq "Final") {
+   print "\n";
+   system ("rm -f $PROGRAM *.o")                # Cleanup if final script
+      unless ($LANG eq "Perl");
+}
+
+if ($TYPE eq "Public") {                        # Reminder to students
+   system ("/c/cs$CLASS/bin/checklog -noprint");
+   system ("/c/cs$CLASS/bin/checkmake -noprint")
+      unless ($LANG eq "Perl");
+}
+
+exit $total;
+
+
+##########
+# Print header for tests
+sub header {
+   printf ("\n%15s%s\n", "", @_);
+}
+
+   
+##########
+# Print addition
+sub addition {
+   my ($points, $title) = @_;
+   printf ("%3d points      %s\n", @_);
+   return $points;
+}
+
+
+##########
+# Print deduction
+sub deduction {
+   printf ("%18d %s\n", @_);
+}
+
+
+##########
+# Run a test
+sub runTest {
+   my ($test, $title, $conds) = @_;
+   my $where   = "/c/cs$CLASS/Hwk$HWK/Tests";   # Where to find test files
+   my $run     = "/c/cs$CLASS/bin/run";         # Utility to run program
+   my $diff    = "/usr/bin/diff";               # Utility to compare files
+   my $head    = "/c/cs$CLASS/bin/Head";        # Utility to output files
+   my $results = "/tmp/$NAME.$$";               # Results of test
+   my $diffs   = "/tmp/diff.$$";                # Expected results vs. results
+   my $errors  = "/tmp/errs.$$";                # Error messages generated
+   my ($status, @conds, $points);
+
+   my $testFile = "$where/$TEST";               # Name of test file
+   $testFile    =~ s{IJ}{$test};
+   my $answers  = "$where/$ANSWER";             # Name of answer file
+   $answers     =~ s{IJ}{$test};
+
+   return 0                                     # Either execute all tests or
+      unless (keys %WHICH == 0                  #   only those on command line
+	      || exists $WHICH{$test});
+
+   (-r $testFile)
+      || die ("$0: missing test file $testFile\n");
+
+   push @UNLINK, $results, $errors, $diffs;     # Files to delete on signal
+
+   if (-x $testFile) {
+      $status = execute ($testFile, undef, $results, $errors);
+   } elsif ($LANG eq "Perl") {
+      $status = execute ($PROGRAM, $testFile, $results, $errors);
+   } else {
+      $status = execute ("$run $PROGRAM", $testFile, $results, $errors);
+   }
+
+   if (defined $conds && $conds eq "Graceful") {
+      @conds = ('NORMAL', $status);
+   } else {
+      (-r $answers)
+	 || die ("$0: missing answer file $answers\n");
+      system ("$diff $answers $results  > $diffs  2>> $errors");
+      system ("$head $errors $diffs");
+      @conds = ('NULL', $errors,  'NULL', $diffs);
+   }
+
+   if (defined $conds && $conds eq "Error message") {
+      @conds = ('NONNULL', $errors,  'NULL', $diffs);
+   }
+
+   $points = &correct (@conds);
+   print "  $points point   $test. $title\n";
+   system ("rm -f $results $errors $diffs");
+   pop @UNLINK;  pop @UNLINK;  pop @UNLINK;     # Remove added files
+
+   return $points;
+}
+
+
+##########
+#  correct ({[UNOP FILE] | ['NORMAL' STATUS]}*)
+#
+#  Return 1 if the conjunction of the specified tests is true, else 0, where:
+#
+#    UNOP FILE (where UNOP is either 'NULL' or 'NONNULL'):
+#      Is the size of the file FILE as specified?
+#
+#    'NORMAL' STATUS:
+#      Did the process terminate normally?
+#
+sub correct {
+   my $op;
+
+   while ($op = shift) {
+      if ($op eq 'NULL') {
+	 my $arg = shift;
+	 print STDERR "$op $arg\n" if $debug;
+	 if (-s $arg) {
+	    if ($arg =~ m{/diff\.}) {
+	       print "Error: STDOUT differs from expected\n";
+	    } elsif ($arg =~ m{/errs\.}) {
+	       print "Error: STDERR should be empty\n";
+	    } else {
+	       print "Error: File $arg is nonempty\n";
+	    }
+	    return 0;
+	 }
+
+      } elsif ($op eq 'NONNULL') {
+	 my $arg = shift;
+	 print STDERR "$op $arg\n" if $debug;
+	 if (!-s $arg) {
+	    if ($arg =~ m{/errs\.}) {
+	       print "Error: STDERR should be nonempty\n";
+	    } else {
+	       print "Error: File $arg is empty\n";
+	    }
+	    return 0;
+	 }
+
+      } elsif ($op eq 'NORMAL') {
+	 my $arg = 127 & shift;
+	 print STDERR "$op $arg\n" if $debug;
+	 if ($arg != 0) {
+	    print "Error: Status = $arg is nonzero\n";
+	    return 0;
+	 }
+      }
+   }
+   return 1;
+}
+
+
+##########
+# Create program to test
+sub makeProgram {
+   system ("rm -f $PROGRAM");                   # Delete program & object files
+   system ("rm -f *.o")
+      if ($TYPE eq "Final");
+
+   (-f "Makefile" || -f "makefile")             # Give warning if no Makefile
+      || warn ("$0: no makefile found\n");
+
+   $ENV{CC} = "gcc";                            # -e flag forces make to use
+   $ENV{CFLAGS} = "-Wall -std=c99 -pedantic";   #   new values of CC & CFLAGS
+   system ("make -e -S $PROGRAM");
+   ($? == 0)
+      || die ("$0: cannot compile $PROGRAM\n");
+}
+
+
+##########
+# Limit CPU-time, wall-clock-time, file-size, and/or heap-size
+use BSD::Resource;
+
+sub limitCpuTime { # (time in seconds)
+   my ($cpu) = @_;
+   setrlimit (RLIMIT_CPU, $cpu, $cpu);
+}
+
+sub limitWallClock { # (time in seconds)
+   my ($wall) = @_;
+   $SIG{ALRM} = 'IGNORE';                       # Parent ignores alarms
+   alarm ($wall);
+}
+
+sub limitFileSize { # (size in kilobytes)
+   my ($size) = @_;
+   $size *= 1024;
+   setrlimit (RLIMIT_FSIZE, $size, $size);
+}
+
+sub limitHeapSize { # (size in kilobytes        # Bug: Has no effect
+   my ($size) = @_;
+   $size *= 1024;
+   setrlimit (RLIMIT_VMEM, $size, $size);
+}
+
+
+##########
+# Execute program after redirecting stdin, stdout, & stderr and return status
+sub execute {
+   my ($program, $stdin, $stdout, $stderr) = @_;
+   my ($pid, $status);
+
+   (defined ($pid = fork))                      # Create child process
+      || die ("$0: fork failed\n");
+
+   if ($pid == 0) {                             # Child process
+      $SIG{ALRM} = 'DEFAULT';                   #  Allow alarms
+      open (STDIN, "<$stdin")                   #  Redirect stdin
+	 if (defined $stdin);
+      open (STDOUT, ">$stdout")                 #  Redirect stdout
+	 if (defined $stdout);
+      open (STDERR, ">$stderr")                 #  Redirect stderr
+	 if (defined $stderr);
+      (exec $program)                           #  Execute command
+	 ||  die ("$0: exec failed\n");
+   }
+
+   waitpid ($pid, 0);                           # Wait for child to die
+   return $?;                                   # ... and return exit status
+}
