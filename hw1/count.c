@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <ctype.h>
+#define ungetchar(c) ungetc(c,stdin)   // Unread char read from stdin
 
 int main() {
   int lines = 0;
@@ -40,7 +41,7 @@ int main() {
       putchar(c);
       if ((nextc = getchar()) == '*') {
         in_comment = 1;
-        putchar("*");
+        putchar('*');
       }
       else {
         ungetchar(nextc);
