@@ -1,28 +1,36 @@
 #include <stdio.h>
 #include <ctype.h>
 
-main() {
+int main() {
   int lines = 0;
-  int c;
-  int next_char;
+  int c, nextc;        /* nextc is used to look ahead at the next character */
 
-/*booleans*/
+/* booleans */
   int in_comment = 0;
   int in_string = 0;
   int has_code = 0;
 
+
+///////////////////////
+/* BEGINNING OF CODE */
+///////////////////////
+
   while ((c = getchar()) != EOF ) {
-    next_char = 0;
 
 /*  if we're inside of a comment, then we only need to watch out if
     the char we read signifies the end of the comment  */
 
     if (in_comment) {
       putchar(c);
-      if (c == '*' && (next_char = getchar()) == '/' ){
-        in_comment = 0;
+      if (c == '*') {
+        if ((nextc = getchar()) == '/') {
+          in_comment = 0;
+          putchar('/');
+        }
+        else {
+          ungetchar(nextc);
+        }
       }
-      putchar(next_char);
     }
 
 /*  watch for the beginning of a comment, but only if we are not currently
@@ -30,10 +38,13 @@ main() {
 
     else if (!in_string && c == '/') {
       putchar(c);
-      if ((next_char = getchar()) == '*') {
+      if ((nextc = getchar()) == '*') {
         in_comment = 1;
+        putchar("*");
       }
-      putchar(next_char);
+      else {
+        ungetchar(nextc);
+      }
     }    // at this point, we know we are not in a comment
 
 /*  if we're inside of a string, then we need to watch for escape sequences
@@ -55,15 +66,19 @@ main() {
       putchar(c);
       in_string = 1;
       has_code = 1;
-    }
+    }    // at this point, we know we are not in a string
 
-/*  test for line splices.  If a backspace occurs, the next char, no matter
-    what it is, cannot signify a new line of code  */
+///////// MUST TEST FOR SINGLE QUOTES
+
+
+/*  test for line splices.  If a backslash occurs, outside of a comment or
+    a quote (which is the case here), the next char, no matter what it is,
+    cannot signify a new line of code  */
 
     else if (c == '\\') {
       putchar(c);
-      next_char = getchar();
-      putchar(next_char);
+      nextc = getchar();
+      putchar(nextc);
     }
 
 /*  at this point, we know we are not in a comment or string, and there is
