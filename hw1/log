@@ -1,4 +1,4 @@
-ESTIMATE of time to complete assignment: 10 hours
+ESTIMATE of time to complete assignment: 8 hours
 
       Start  Time
 Date  Time   Spent Work completed
@@ -11,10 +11,25 @@ Date  Time   Spent Work completed
                    just realized there is a major problem with the way my
                    program runs.  Realized I will have to make a big change
                    to handle the "look ahead"
-
+1/21  11:00  1:30  Changed the way that my code handles the look ahead, now
+                   uses ungetchar().  Code now passes all public tests
 
              ----
-             7:55  TOTAL time spent
+             8:15  TOTAL time spent
 
-<A brief discussion of the major difficulties you encountered>
+The biggest problem I had with this assignment is with the logic.  There is a
+lot of logic (condition checking) in the while loop, and I had trouble thinking
+of the order to put them in, and it was hard thinking of how to implement the
+conditions.
+
+I also had problems with thinking of how to implement the look ahead at the
+next character.  At first, I just had the program getchar() the next character
+(when necessary, for example, when looking for the beginning of a comment),
+and compare it to what I'm expecting.  I didn't consider the case of what
+happens if the next char is not what I'm expecting.
+
+When I realized my mistake, I just had the program print the next character.
+But then I realized that if the next char is something important, such as a
+line splice, then that never gets tested, since we skipped testing the next
+char with all the conditions.  So then I realized I had to use ungetchar().
 

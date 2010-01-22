@@ -1,3 +1,11 @@
+/*  count.c
+
+    Reads a c program and outputs the program line by line,
+    and at the end of each line of code, appends the line number
+
+    by Wei Yan  */
+
+
 #include <stdio.h>
 #include <ctype.h>
 #define ungetchar(c) ungetc(c,stdin)   // Unread char read from stdin
@@ -68,9 +76,6 @@ int main() {
       in_string = 1;
       has_code = 1;
     }    // at this point, we know we are not in a string
-
-///////// MUST TEST FOR SINGLE QUOTES
-
 
 /*  test for line splices.  If a backslash occurs, outside of a comment or
     a quote (which is the case here), the next char, no matter what it is,

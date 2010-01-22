@@ -1,4 +1,4 @@
-# Makefile for Count                              Stan Eisenstat (2010/01/11)
+# Makefile for Count
 
 # Standard compiler options
 CFLAGS = -g3 -std=c99 -pedantic -Wall
